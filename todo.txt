@@ -1,3 +1,21 @@
     1. Write Regex function to validate SM name input.
     (what It can and cannot contain? What symbols are restricted? What format should it have?)
     2. Write Wrapping functions to format text
+
+    WHAT CAN BE IN NAME? (REGEX)
+    Pytałeś w Read-Host: „what It can and cannot contain? What symbols are restricted?”
+
+W Active Directory podstawowym parametrem tożsamości jest SamAccountName (czyli login użytkownika).
+Ma on restrykcyjne ograniczenia:
+
+Maksymalna długość: 20 znaków (dla starszych systemów, ale warto się tego trzymać dla kompatybilności).
+
+Zabronione znaki: / \ [ ] : ; | = , + * ? < >
+
+Format: Dla skrzynek współdzielonych dobrym standardem (zamiast imienia i nazwiska) jest mały format techniczny,
+ np. sm_support lub shared.finance (z przedrostkiem oznaczającym Shared Mailbox).
+
+ REGEX DRAFT:
+
+    $regex = '^[a-zA-Z-0-9_\-\.]{3,20}$'
+    $regexShort = '^\w\d$'
