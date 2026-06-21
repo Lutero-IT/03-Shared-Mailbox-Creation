@@ -1,6 +1,17 @@
-    1. write permissions checker
-    2. Write Wrapping functions to format text
-    3. separate those helper functions tha are not using AD cmdlets to distinct files
+    1. write adding new user section to create Shared Mailbox account
+
+    2. after you write create new user section, add prompt for what department user want to create
+    SM and check if it is a group, for example:
+    "Provie department you create SM for >> Shadows
+    @@@ check if shadows is a group @@@
+    @@@ it is @@@
+    and so on ... "
+
+    CHECK: Get-ADObject for this task
+
+    3. write script to delete previous SM Accounts for test purposes (like delete ALL accounts in 'Shared Mailboxes' OU)
+
+    4. separate those helper functions tha are not using AD cmdlets to distinct files
     to keep main script maximum clear and simple
 
 NOTES:

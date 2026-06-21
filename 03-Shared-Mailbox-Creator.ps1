@@ -13,6 +13,24 @@ function Approve-Name {
     return ($Name -match $regex)
 }
 
+$Indent = "`t"
+function Write-IndentHost ([string]$Message) {
+    Write-Host "${Indent}$Message" @Args
+    Write-Host ""
+}
+
+function Read-IndentHost ([string]$Message) {
+    Read-Host -Prompt "${Indent}$Message"
+    Write-IndentHost ""
+}
+
+function Read-Password ([string]$Message) {
+    Read-Host -Prompt "${Indent}$Message" -AsSecureString
+    Write-IndentHost ""
+}
+
+# Variables
+
 # Pre-flight check for account permissions
 $myIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
 $myPrincipal = [System.Security.Principal.WindowsPrincipal]::new($myIdentity)
@@ -21,48 +39,81 @@ $isAdmin     = $myPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRo
 if ($isAdmin) {
     $condition = $true
 } else {
-    Write-Host "You don't have rights to create accounts in this Active Directory"
-    Write-Host "Contact your administrator"
+    Write-IndentHost "You don't have rights to create accounts in this Active Directory"
+    Write-IndentHost "Contact your administrator"
     $condition = $false
 }
 
 while ($condition) {
-    Write-Host "Provide name for a Shared Mailbox account"
+    Write-IndentHost "For what department do you want to create a shared mailbox?"
     do {
-        $name = Read-Host -Prompt "Type name"
+        $name = (Read-IndentHost "Type name").ToLower()
 
         try {
             $isMatch = Approve-Name -Name $name
 
             if ($isMatch) {
-                Write-Host "Name meet requirements"
+                Write-IndentHost "Name meet requirements"
 
                 try {
                     Get-ADUser -Identity $name -ErrorAction Stop | Out-Null
-                    Write-Host "User exists in database"
-                    Write-Host "Choose other name for a new Shared Mailbox Account"
+                    Write-IndentHost "Shared Mailbox account with this name already exists in the database!"
+                    Write-IndentHost "Choose other name for a new Shared Mailbox Account"
                     $userExist = $true
                 }
                 catch {
-                    Write-Host "User doesn't exist in database"
+                    Write-IndentHost "Shared Mailbox Account with this name doesn't exist in the database"
                     $userExist = $false
                     $condition = $false
                 }
 
             } else {
-                Write-Host "Name doesn't meet requirements"
-                Write-Host "Name has to be at least 5 or at most 20 characters long"
-                Write-Host "and can contain only letters (upper or lowercase) or numbers"
-                Write-Host "and a three special signs: underscore (_), dash (-) and dot (.)"
+                Write-IndentHost "Name doesn't meet requirements"
+                Write-IndentHost "Name has to be at least 5 or at most 20 characters long"
+                Write-IndentHost "and can contain only letters (upper or lowercase) or numbers"
+                Write-IndentHost "and a three special signs: underscore (_), dash (-) and dot (.)"
             }
         }
         catch {
-            Write-Host "No input passed"
+            Write-IndentHost "No input passed"
         }
 
     } until (-not $userExist)
+
+    Write-IndentHost "To create Shared Mailbox Account, provide password"
+    # use regex to verify it! what are the standards for a password?
+
+    $password = Read-Password "Type password"
+
+    # Variables for Account Parameters
+    $titleName = (Get-Culture).TextInfo.ToTitleCase($name)
+    $domainRoot = (Get-ADDomain -Current LoggedOnUser).DNSRoot
+    $samName = "sm_$name"
+    $fullName = "Shared Mailbox"
+
+    $AccoutParams = @{
+        Name = "$titleName $fullName"
+        SamAccountName = $samName
+        UserPrincipalName = "$samName@$domainRoot"
+        DisplayName = "$fullName - $titleName"
+        AccountPassword = $password
+        Enabled = $false
+        ChangePasswordAtLogon = $false
+        Path = "OU=Shared Mailboxes,OU=Resources,OU=Camp,DC=oldcamp,DC=gothic,DC=inc"
+        Description = "Shared Mailbox for '$titleName' department, created by Shared Mailbox Creator."
+
+    } # COMMIT AFTER DEFINING PARAMETERS AND TESTING IF CREATES SM ACCOUNT!!!!
+
+    # try/catch to catch and display errors from New-ADUser
+    try {
+        New-ADUser @AccoutParams -ErrorAction Stop
+        $newAccount = Get-ADUser -Identity "sm_$name"
+        Write-IndentHost "Account for '$titleName' department created successfully!"
+    }
+    catch {
+        Write-IndentHost "ERROR: Failed to create Active Directory account"
+        Write-IndentHost "Reason: $($_.Exception.Message)"
+        Remove-ADUser -Identity $samName -Confirm:$false -ErrorAction SilentlyContinue
+    }
+
 }
-
-
-# New-ADUser -Identity $name -ErrorAction Stop --- COMMENTED TO NOT CREATE USERS RIGHT NOW! UNCOMMENT LATER!
-# czy moga byc inne błedy niż te wynikająca z tego, że skrypt nie uruchomił administrator?
