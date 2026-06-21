@@ -1,0 +1,3 @@
+    1. Write Regex function to validate SM name input.
+    (what It can and cannot contain? What symbols are restricted? What format should it have?)
+    2. Write Wrapping functions to format text
