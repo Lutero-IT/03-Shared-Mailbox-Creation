@@ -1,9 +1,26 @@
-    1. Write Regex function to validate SM name input.
-    (what It can and cannot contain? What symbols are restricted? What format should it have?)
+    1. write permissions checker
     2. Write Wrapping functions to format text
+    3. separate those helper functions tha are not using AD cmdlets to distinct files
+    to keep main script maximum clear and simple
 
-    WHAT CAN BE IN NAME? (REGEX)
-    Pytałeś w Read-Host: „what It can and cannot contain? What symbols are restricted?”
+NOTES:
+
+Architektoniczny „Upgrade”: [CmdletBinding()] i throw
+Wspominaliśmy o tym przy okazji obsługi błędów w terminalu. Jeśli chcesz, aby ta funkcja
+idealnie współpracowała z Twoim blokiem try/catch w głównym skrypcie, sama funkcja powinna
+generować wyjątek przerywający, zamiast tylko zwracać $true/$false.
+
+Dlaczego warto? Jeśli funkcja po prostu zwróci $false, Twój blok try uzna, że
+funkcja wykonała się pomyślnie (bo nie było błędu systemowego), i będziesz musiał
+ręcznie pisać warunki if/else w głównym kodzie.
+
+Jak to zmienić? Jeśli sprawdzisz warunek przez -notmatch i użyjesz słowa kluczowego
+throw "Nazwa nie spełnia standardów!", funkcja przy złym inpucie natychmiast aktywuje
+sekcję catch w głównym skrypcie.
+
+
+WHAT CAN BE IN NAME? (REGEX)
+Pytałeś w Read-Host: „what It can and cannot contain? What symbols are restricted?”
 
 W Active Directory podstawowym parametrem tożsamości jest SamAccountName (czyli login użytkownika).
 Ma on restrykcyjne ograniczenia:

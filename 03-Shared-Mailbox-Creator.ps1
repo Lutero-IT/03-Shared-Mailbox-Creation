@@ -1,4 +1,6 @@
 # HELPER FUNCTIONS #
+# separate those helper functions tha are not using AD cmdlets to distinct files
+# to keep main script maximum clear and simple
 
 function Approve-Name {
     param (
@@ -7,60 +9,60 @@ function Approve-Name {
         [string]$Name
     )
 
-    $regex = '^[a-zA-Z-0-9_\-\.]{5,20}$'
+    $regex = '^[a-zA-Z0-9_\-\.]{5,20}$'
     return ($Name -match $regex)
 }
 
-<#
-    For Approve-Name
-    Write mechanism that will manage empty input for parameter $Name
-    I can use if/else before function to check if $name is null
-    or can I do it inside function?
-    I could bind CommonParameters and use -ErrorAction and try/catch
-    on the Approve-Name function but is it the best way?
-    Or simply check the input before calling a function?
-#>
+# Pre-flight check for account permissions
+$myIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$myPrincipal = [System.Security.Principal.WindowsPrincipal]::new($myIdentity)
+$isAdmin     = $myPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
 
-Write-Host "Provide name for a Shared Mailbox account"
-$name = Read-Host -Prompt "Type name"
-
-try {
-    $isMatch = Approve-Name -Name $name
-    # I need to get the value from Approve-Name
-    # If it is true I pass the name to the Check User
-    # If not I ask again for correct input
-    if ($isMatch) {
-        Write-Host "Name meet requirements"
-    } else {
-        Write-Host "Name doesn't meet requirements"
-        # loop back to the prompt
-    }
-}
-catch {
-    Write-Host "No input passed"
+if ($isAdmin) {
+    $condition = $true
+} else {
+    Write-Host "You don't have rights to create accounts in this Active Directory"
+    Write-Host "Contact your administrator"
+    $condition = $false
 }
 
-# Check if user exist in database
-try {
-    Get-ADUser -Identity $name -ErrorAction Stop | Out-Null
-    Write-Host "User exists in database"
-    $userExist = $true
-}
-catch {
-    Write-Host "User doesn't exist in database"
-    $userExist = $false
-}
+while ($condition) {
+    Write-Host "Provide name for a Shared Mailbox account"
+    do {
+        $name = Read-Host -Prompt "Type name"
 
-# Check if operater has permissions to create users
-if (-not $userExist) {
-    try {
-        # New-ADUser -Identity $name -ErrorAction Stop --- COMMENTED TO NOT CREATE USERS RIGHT NOW! UNCOMMENT LATER!
-        
-        # Create user if have admin permissions
-        Write-Host "$name user account created"
-    }
-    catch {
-        Write-Host "You don't have rights to create accounts in this Active Directory"
-        Write-Host "Contact your administrator"
+        try {
+            $isMatch = Approve-Name -Name $name
+
+            if ($isMatch) {
+                Write-Host "Name meet requirements"
+
+                try {
+                    Get-ADUser -Identity $name -ErrorAction Stop | Out-Null
+                    Write-Host "User exists in database"
+                    Write-Host "Choose other name for a new Shared Mailbox Account"
+                    $userExist = $true
+                }
+                catch {
+                    Write-Host "User doesn't exist in database"
+                    $userExist = $false
+                    $condition = $false
+                }
+
+            } else {
+                Write-Host "Name doesn't meet requirements"
+                Write-Host "Name has to be at least 5 or at most 20 characters long"
+                Write-Host "and can contain only letters (upper or lowercase) or numbers"
+                Write-Host "and a three special signs: underscore (_), dash (-) and dot (.)"
+            }
         }
+        catch {
+            Write-Host "No input passed"
+        }
+
+    } until (-not $userExist)
 }
+
+
+# New-ADUser -Identity $name -ErrorAction Stop --- COMMENTED TO NOT CREATE USERS RIGHT NOW! UNCOMMENT LATER!
+# czy moga byc inne błedy niż te wynikająca z tego, że skrypt nie uruchomił administrator?
