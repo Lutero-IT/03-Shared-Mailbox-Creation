@@ -56,7 +56,7 @@ while ($condition) {
                 Write-IndentHost "Name meet requirements"
 
                 try {
-                    Get-ADUser -Identity $name -ErrorAction Stop | Out-Null
+                    Get-ADUser -Identity "sm_$name" -ErrorAction Stop | Out-Null
                     Write-IndentHost "Shared Mailbox account with this name already exists in the database!"
                     Write-IndentHost "Choose other name for a new Shared Mailbox Account"
                     $userExist = $true
@@ -85,11 +85,12 @@ while ($condition) {
 
     $password = Read-Password "Type password"
 
-    # Variables for Account Parameters
+    # Variables for Account and Group Parameters
     $titleName = (Get-Culture).TextInfo.ToTitleCase($name)
     $domainRoot = (Get-ADDomain -Current LoggedOnUser).DNSRoot
     $samName = "sm_$name"
     $fullName = "Shared Mailbox"
+    $GroupName = "sg_sm_${name}_access"
 
     $AccoutParams = @{
         Name = "$titleName $fullName"
@@ -102,18 +103,34 @@ while ($condition) {
         Path = "OU=Shared Mailboxes,OU=Resources,OU=Camp,DC=oldcamp,DC=gothic,DC=inc"
         Description = "Shared Mailbox for '$titleName' department, created by Shared Mailbox Creator."
 
-    } # COMMIT AFTER DEFINING PARAMETERS AND TESTING IF CREATES SM ACCOUNT!!!!
+    }
 
-    # try/catch to catch and display errors from New-ADUser
+    $GroupParams = @{
+        Name = $GroupName
+        DisplayName = "Security Group - SM - $titleName - Access"
+        GroupScope = "Global"
+        GroupCategory = "Security"
+        Path = "OU=Shared Mailboxes,OU=Resources,OU=Camp,DC=oldcamp,DC=gothic,DC=inc"
+        Description = "Access group for the $titleName Shared Mailbox. Created via automation script."
+    }
+
+    # try/catch to catch and display errors from New-ADUser or New-ADGroup
     try {
         New-ADUser @AccoutParams -ErrorAction Stop
         $newAccount = Get-ADUser -Identity "sm_$name"
-        Write-IndentHost "Account for '$titleName' department created successfully!"
+        Write-IndentHost "$fullName for '$titleName' department created successfully!"
+
+        New-ADGroup @GroupParams
+        Write-IndentHost "Access group for '$fullName - $titleName' created successfully!"
     }
     catch {
-        Write-IndentHost "ERROR: Failed to create Active Directory account"
+        Write-IndentHost "ERROR: Failed to provision Shared Mailbox infrastructure" -BackgroundColor Red -ForegroundColor White
         Write-IndentHost "Reason: $($_.Exception.Message)"
         Remove-ADUser -Identity $samName -Confirm:$false -ErrorAction SilentlyContinue
     }
+
+    # Add-ADGroupMember -Identity $GroupName -Members
+    # napisać pętle która dodaje członkó danej grupy. np 'Shadows'
+    # PO COMMICIE New-ADGroup !!!
 
 }

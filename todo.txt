@@ -1,4 +1,4 @@
-    1. write adding new user section to create Shared Mailbox account
+    1. change ALL THE HARDCODED VALUES like Paths and others to make script versatile!
 
     2. after you write create new user section, add prompt for what department user want to create
     SM and check if it is a group, for example:
