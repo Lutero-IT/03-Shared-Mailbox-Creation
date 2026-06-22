@@ -1,5 +1,10 @@
-    1. change ALL THE HARDCODED VALUES like Paths and others to make script versatile!
+TO COMMIT:
+    1. deleted hardcoded paths to OU and change te to a script parameter variable
+    2. added short remove script for test purposes to delete all the AD object in targe OU
+    3. imported show-arrowmenu to the script because i'll use it for menu
 
+TO DO:
+    1. change harcoded value in the remove script
     2. after you write create new user section, add prompt for what department user want to create
     SM and check if it is a group, for example:
     "Provie department you create SM for >> Shadows
@@ -9,7 +14,7 @@
 
     CHECK: Get-ADObject for this task
 
-    3. write script to delete previous SM Accounts for test purposes (like delete ALL accounts in 'Shared Mailboxes' OU)
+    3. create a menu where user can add single user/many users or whole groups to the deparments ???
 
     4. separate those helper functions tha are not using AD cmdlets to distinct files
     to keep main script maximum clear and simple
