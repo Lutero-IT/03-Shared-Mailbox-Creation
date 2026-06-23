@@ -10,7 +10,6 @@ function Manage-ADGroupMembers {
     # GLOBAL VARIABLES #
     $Indent = "`t"
     $groupName = $Group
-    Write-Host "GroupName to: '$groupName'" -ForegroundColor Cyan
     $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
 
     # WRAPPER FUNCTIONS #
@@ -30,16 +29,14 @@ function Manage-ADGroupMembers {
     $noList = "no n"-split" "
 
     # STARTING MENU #
-    $title = "Access Group Manager"
-    Write-IndentHost ("="*80)
-    Write-IndentHost (" " * ((80 - [int]$title.Length) / 2 ) ) $title
-    Write-IndentHost ("="*80)
-
-    Write-IndentHost "Welcome in the Access Group menu for '$fullName - $titleName'!"
-    Write-IndentHost "Here you can add or remove members or entire groups to the '$SMGroupName' group"
-    Write-IndentHost "or you can change the currently managed group to the other access group"
-    Write-Host ""
-    Write-IndentHost "Choose one of the available options below"
+    $WelcomeMessage = {
+        Write-Host ""
+        Write-IndentHost "Welcome in the Access Group menu for '$fullName - $titleName'!"
+        Write-IndentHost "Here you can add or remove members or entire groups to the '$SMGroupName' group"
+        Write-IndentHost "or you can change the currently managed group to the other access group"
+        Write-Host ""
+        Write-IndentHost "Choose one of the available options below"
+    }
 
 
         # Here make the logic for add and remove members from the access group
@@ -48,7 +45,8 @@ function Manage-ADGroupMembers {
 
     while ($true) {
         # add -group parameter back to the show-arrowmenu or create another function
-
+        
+        $title = "Access Group Manager"
         $menu = @(
             "Add Members",
             "Remove Members",
@@ -58,7 +56,8 @@ function Manage-ADGroupMembers {
             "Exit"
         )
 
-        $optionIndex = Show-ArrowMenu -Title "Main Menu" -Group $groupName -Menu $menu
+        Start-Sleep -Seconds 3
+        $optionIndex = Show-ArrowMenu -Menu $menu -Title $title -Group $groupName -Message $WelcomeMessage
 
         switch ($optionIndex) {
             # OPTION 1 - ADD MEMBER #

@@ -1,24 +1,7 @@
-    
-    Write-IndentHost "Welcome in the Access Group menu for '$fullName - $titleName'!"
-    Write-IndentHost "Here you can add or remove members or entire groups to the '$SMGroupName' group"
-    Write-IndentHost "If you wish to change access group you are currently editing"
-
-    $menu = @(
-        "Add Members",
-        "Remove Members",
-        "Add Group",
-        "Remove Group"
-        "Exit"
-    )
-
-    # Here make the logic for add and remove members from the access group
-    # how to change to other access group?
-
 TO COMMIT:
 
 TO DO:
-    1. i thin I should separate shared mailbox creator from the shared mailbox manager and connect the smehow for
-    better readability and managaement
+    1. add rest of the features to the access group menu and finish the Project
     2. separate those helper functions tha are not using AD cmdlets to distinct files
     to keep main script maximum clear and simple
 

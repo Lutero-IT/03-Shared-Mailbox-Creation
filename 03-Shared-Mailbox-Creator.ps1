@@ -195,10 +195,13 @@ while ($condition) {
     }
     
     if ($groupExists) {
+        $FoundMessage = {
         Write-IndentHost "Found a group in Active Directory that has the name`n`tof the deparment you wish to create Shared Mailbox for."
         Write-IndentHost "Do you wish to add the users of the group '$ADGroupName' to the`n`taccess group '$SMGroupName' for '$titleName $fullName' account?"
+        }
         
-        $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title "Confirm"
+        Start-Sleep -Seconds 3
+        $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title "Notice" -Message $FoundMessage
         Write-IndentHost ""
 
         switch ($OptionIndex) {

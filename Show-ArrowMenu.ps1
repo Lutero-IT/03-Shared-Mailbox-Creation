@@ -7,11 +7,12 @@ function Write-Indent ([string]$Message) {
 
 function Show-ArrowMenu {
 
-    # PARAMETER #
+    # PARAMETERS #
     param (
         [string[]]$Menu = "",
         [string]$Title = "",
-        [string]$Group = ""
+        [string]$Group = $null,
+        [scriptblock]$Message = {}
     )
 
     # VARIABLES #
@@ -22,27 +23,31 @@ function Show-ArrowMenu {
     # MAIN BODY #
     while ($pressedKey -ne "Enter") {
 
+        Clear-Host
+
         Write-Host ""
         Write-Indent ("="*80)
         Write-Indent (" " * ((80 - [int]$Title.Length) / 2 ) ) $Title
         Write-Indent ("="*80)
 
-        if ($Group.Length -ne 0) {
-            Write-Host ""
-            Write-Indent "You are currently editing " -NoNewLine
-            Write-Host "'$Group'" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
-            Write-Host " group"
-            Write-Host ""
-            Write-Indent ("-"*80)
-            Write-Host ""
-        } else {
-            Write-Host ""
+        if ($Message -ne $null) {
+            & $Message
         }
         
         if ( $selectIndex -gt $maxIndex ) {
             $selectIndex = 0    
         } elseif ( $selectIndex -lt 0 ) {
             $selectIndex = $maxIndex
+        }
+
+        if ( -not ([string]::IsNullOrEmpty($Group)) ) {
+            Write-Host ""
+            Write-Indent "You are currently editing " -NoNewLine
+            Write-Host "'$Group'" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+            Write-Host " group"
+            Write-Host ""
+        } else {
+            Write-Host ""
         }
 
         foreach ($option in $Menu) {
@@ -62,7 +67,6 @@ function Show-ArrowMenu {
             "Enter" { return $selectIndex }
         }
     
-    Clear-Host
     }
 }
 
