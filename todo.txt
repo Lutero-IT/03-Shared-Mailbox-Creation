@@ -1,26 +1,25 @@
+    
+    Write-IndentHost "Welcome in the Access Group menu for '$fullName - $titleName'!"
+    Write-IndentHost "Here you can add or remove members or entire groups to the '$SMGroupName' group"
+    Write-IndentHost "If you wish to change access group you are currently editing"
+
+    $menu = @(
+        "Add Members",
+        "Remove Members",
+        "Add Group",
+        "Remove Group"
+        "Exit"
+    )
+
+    # Here make the logic for add and remove members from the access group
+    # how to change to other access group?
+
 TO COMMIT:
-    # COMMIT WELCOME MESSAGE !!!
-                # COMMIT changing try/catch to if/else and using the -Filter parameter to check the UPN
-                # COMMIT makin use of show-arrowmenu
-# COMMIT: developed a found group with the name of the deparment feature and yes no choice
+
 TO DO:
-
-    1. rewrite program, make welcome message and interactive menu right from the beginning if it is possible
-    2. write a program that will work when everything is fine and after you finish, start look for problems
-    that need to be handled, like when input is incorret!
-
-    2. after you write create new user section, add prompt for what department user want to create
-    SM and check if it is a group, for example:
-    "Provie department you create SM for >> Shadows
-    @@@ check if shadows is a group @@@
-    @@@ it is @@@
-    and so on ... "
-
-    CHECK: Get-ADObject for this task
-
-    3. create a menu where user can add single user/many users or whole groups to the deparments ???
-
-    4. separate those helper functions tha are not using AD cmdlets to distinct files
+    1. i thin I should separate shared mailbox creator from the shared mailbox manager and connect the smehow for
+    better readability and managaement
+    2. separate those helper functions tha are not using AD cmdlets to distinct files
     to keep main script maximum clear and simple
 
 NOTES:

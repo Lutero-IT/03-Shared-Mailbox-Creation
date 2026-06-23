@@ -9,6 +9,7 @@ param(
 
 # Import functions
 . ".\Show-ArrowMenu.ps1"
+. ".\Manage-ADGroupMembers.ps1"
 
 # Helper functions
 function Approve-Name {
@@ -116,7 +117,11 @@ while ($condition) {
         Write-IndentHost "======================================================================"
         Write-IndentHost "To provision the account, the password MUST meet the following rules:`n"
         Write-IndentHost " 1. Minimum length: 7 characters (14 recommended for production)"
-        Write-IndentHost " 2. Must contain characters from at least 3 of these groups:`n    - Uppercase letters (A-Z)`n    - Lowercase letters (a-z)`n    - Base 10 digits (0-9)`n    - Non-alphanumeric characters (e.g. !, @, #, $, %)"
+        Write-IndentHost " 2. Must contain characters from at least 3 of these groups:"
+        Write-IndentHost "- Uppercase letters (A-Z)"
+        Write-IndentHost "- Lowercase letters (a-z)"
+        Write-IndentHost "- Base 10 digits (0-9)"
+        Write-IndentHost "- Non-alphanumeric characters (e.g. !, @, #, $, %)"
         Write-IndentHost " 3. Cannot contain the account name (sm_$name) or department name."
         Write-IndentHost "======================================================================"
 
@@ -180,7 +185,6 @@ while ($condition) {
             }
         }
 
-    # COMMIT THIS BELOW !!!
     try {
         $ADGroupObject = Get-ADGroup -Identity $titleName -ErrorAction Stop
         $ADGroupName = (Get-ADGroup -Identity $titleName).Name
@@ -193,9 +197,9 @@ while ($condition) {
     if ($groupExists) {
         Write-IndentHost "Found a group in Active Directory that has the name`n`tof the deparment you wish to create Shared Mailbox for."
         Write-IndentHost "Do you wish to add the users of the group '$ADGroupName' to the`n`taccess group '$SMGroupName' for '$titleName $fullName' account?"
-
-        #arrow menu here
+        
         $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title "Confirm"
+        Write-IndentHost ""
 
         switch ($OptionIndex) {
             0 {
@@ -210,14 +214,7 @@ while ($condition) {
         }
     }
     
-    $menu = @(
-        "Add Members",
-        "Remove Members",
-        "Add entire group",
-        "Exit"
-    )
+    Manage-ADGroupMembers -OUPath $OUPath -Group $SMGroupName
 
-    $condition = $false
-
-    # show menu where user can choose if he wants to add members to a group or exit the program
+$condition = $false
 }

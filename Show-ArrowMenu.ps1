@@ -1,13 +1,17 @@
 
 # ============= PROGRAM ================= #
 
+function Write-Indent ([string]$Message) {
+    Write-Host "${Indent}$Message" @Args
+}
+
 function Show-ArrowMenu {
 
     # PARAMETER #
     param (
         [string[]]$Menu = "",
         [string]$Title = "",
-        [string]$Group = "None"
+        [string]$Group = ""
     )
 
     # VARIABLES #
@@ -19,14 +23,21 @@ function Show-ArrowMenu {
     while ($pressedKey -ne "Enter") {
 
         Write-Host ""
-        Write-IndentHost ("="*80)
-        Write-IndentHost (" " * ((80 - [int]$Title.Length) / 2 ) ) $Title
-        Write-IndentHost ("="*80)
+        Write-Indent ("="*80)
+        Write-Indent (" " * ((80 - [int]$Title.Length) / 2 ) ) $Title
+        Write-Indent ("="*80)
 
-
-        Write-Host ""
-        Write-IndentHost "You are currently editing '$Group' group" -BackgroundColor Yellow -ForegroundColor Black
-        Write-Host ""
+        if ($Group.Length -ne 0) {
+            Write-Host ""
+            Write-Indent "You are currently editing " -NoNewLine
+            Write-Host "'$Group'" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+            Write-Host " group"
+            Write-Host ""
+            Write-Indent ("-"*80)
+            Write-Host ""
+        } else {
+            Write-Host ""
+        }
         
         if ( $selectIndex -gt $maxIndex ) {
             $selectIndex = 0    
@@ -36,9 +47,9 @@ function Show-ArrowMenu {
 
         foreach ($option in $Menu) {
             if ($Menu.IndexOf($option) -eq $selectIndex) {
-                Write-IndentHost $option -BackgroundColor Yellow -ForegroundColor Black
+                Write-Indent $option -BackgroundColor Yellow -ForegroundColor Black
             } else {
-                Write-IndentHost $option -ForegroundColor White
+                Write-Indent $option -ForegroundColor White
             }
         }
             
@@ -50,19 +61,13 @@ function Show-ArrowMenu {
             "DownArrow" {$selectIndex++}
             "Enter" { return $selectIndex }
         }
-
-        Clear-Host
+    
+    Clear-Host
     }
 }
 
-<# TO DO:
+<# TO LAUNCH:
     1. Change WinRM protocole (Enter PS-Session) to SSH protocole
     so the ReadKey method of [Console] class can work on a remote session.
-    2. 
-
-    TO COMMIT:
-        1. Turned script into a function with a parameter. Deleted hardcoded values like $oldCampList.
-        2. Parameter takes menu list as an input and displays all the options
-        with arrow navigation and option highlighting.
 
 #>

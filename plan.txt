@@ -1,83 +1,9 @@
-Shared Mailbox Creation SCRIPT
+Okay so I have written the '03-Shared-Mailbox-Creator.ps1' program that creates a Shared Mailbox account
+and access group to that account and adds group that matches the department name.
 
-What are the BASIC requirements (create disable AD user account)
-    In order to create shared mailbox, I have to create an AD user account that will be disabled.
-    Why user account?
-    Because there is no distinct AD object like 'mailbox' object so we create user account and
-    share it among other users with the use of a Security Group.
+Now I want to create a menu, where user can add,remove members or groups to the access group.
+I want to reuse the written 'Manage-ADGroupMembers.ps1' program because it has most of the funcionalisties
+I need for the 03 Project, but I have to change some parts of the 02 Project.
 
-    To start, script should create new AD user account.
-    What are edge cases?
-
-    If the user already exists, and if the script is launched by administrator.
-    I guess that for existing user there will be an error and same for launching the script without permissions.
-
-    So, I have to use 'Get-ADUser' and 'if/else' statement, and try/catch and -ErrorAction parameter.
-    Write this, test it and COMMIT it after you write this creating new user mechanism.
-    Remember about ATOMIC COMMITS!!!
-
-Write formatting wrapper functions like in the previous script!!!
-
-The Structure of New User Section:
-
-    # First get input
-
-    Write-Host "Provide name for a Shared Mailbox account"
-    $name = Read-Host -Prompt "Type name (what It can and cannot contain? What symbols are restricted? What format should it have?)"
-
-    # Next check if user is in database
-
-
-    try { Get-ADUser -Identity $name -ErrorAction Stop
-        Write-Host "User exists in database"
-        $userExist = $true
-    }
-    catch {
-        Write-Host "User doesn't exist in database"
-        $userExist = $false
-    }
-
-    # If user is not in database, check permissions
-    # After user presence is checked and permissions are granted, created user account
-
-    if (-not $userExist) {
-        try {
-            New-ADUser -Identity $name -ErrorAction Stop
-            # Create user if have admin permissions
-            Write-Host "$name user account created"
-        }
-        catch {
-            Write-Host "You don't have rights to create accounts in this Active Directory"
-            Write-Host "Contac your administrator"
-        }
-    }
-
-    ### WHAT ARE OTHER security mechanisms that I can introduce at this stage?
-
-Complete Create User Code Section:
-
-        Write-Host "Provide name for a Shared Mailbox account"
-        $name = Read-Host -Prompt "Type name (what It can and cannot contain? What symbols are restricted? What format should it have?)"
-
-        # Check if user exist in database
-        try { Get-ADUser -Identity $name -ErrorAction Stop
-            Write-Host "User exists in database"
-            $userExist = $true
-        }
-        catch {
-            Write-Host "User doesn't exist in database"
-            $userExist = $false
-        }
-
-        # Check if operater has permissions to create users
-        if (-not $userExist) {
-        try {
-            New-ADUser -Identity $name -ErrorAction Stop
-            # Create user if have admin permissions
-            Write-Host "$name user account created"
-        }
-        catch {
-            Write-Host "You don't have rights to create accounts in this Active Directory"
-            Write-Host "Contact your administrator"
-        }
-    }
+Later I will import the Group Manager to the Mailbox Creator.
+      
