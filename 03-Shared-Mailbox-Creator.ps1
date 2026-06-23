@@ -40,6 +40,10 @@ function Read-Password ([string]$Message) {
 
 # Variables
 $domainRoot = (Get-ADDomain -Current LoggedOnUser).DNSRoot
+$YesNo = @(
+    "YES",
+    "NO"
+)
 
 # Pre-flight check for account permissions
 $myIdentity  = [System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -55,6 +59,18 @@ if ($isAdmin) {
 }
 
 while ($condition) {
+
+    Write-IndentHost ""
+    Write-IndentHost "Welcome in the Shared Mailbox Creator!"
+    Write-IndentHost ""
+    Write-IndentHost "To create a Shared Mailbox, you need to provide a name for an AD account"
+    Write-IndentHost "that will get the role of the Shared Mailbox."
+    Write-IndentHost ""
+    Write-IndentHost "Name has to be at least 5 or at most 20 characters long"
+    Write-IndentHost "and can contain only letters (upper or lowercase) or numbers"
+    Write-IndentHost "and a three special signs: underscore (_), dash (-) and dot (.)"
+    Write-IndentHost ""
+
     $userExist = $true
     do {
         Write-IndentHost "For what department do you want to create a shared mailbox?"
@@ -66,13 +82,14 @@ while ($condition) {
             if ($isMatch) {
                 Write-IndentHost "Name meet requirements" -BackgroundColor Green -ForegroundColor White
 
-                try {
-                    Get-ADUser -Identity "sm_$name" -ErrorAction Stop | Out-Null
-                    Get-ADUser -Identity "sm_$name@$domainRoot" -ErrorAction Stop | Out-Null
+                $upnToCheck = "sm_$name@$domainRoot"
+                $samToCheck = "sm_$name"
+                $existingUser = Get-ADUser -Filter "sAMAccountName -eq '$samToCheck' -or UserPrincipalName -eq '$upnToCheck'"
+
+                if ($existingUser -ne $null) {
                     Write-IndentHost "Shared Mailbox account with this name already exists in the database!"  -BackgroundColor Yellow -ForegroundColor Black
                     Write-IndentHost "Choose other name for a new Shared Mailbox Account"
-                }
-                catch {
+                } else {
                     Write-IndentHost "Shared Mailbox Account with this name doesn't exist in the database" -BackgroundColor Yellow -ForegroundColor Black
                     $userExist = $false
                 }
@@ -162,23 +179,35 @@ while ($condition) {
             exit
             }
         }
-    
 
-    # solve the problem of showin this message after ERROR from 'catch' above !!!
+    # COMMIT THIS BELOW !!!
     try {
-        Get-ADGroup -Identity $titleName -ErrorAction Stop | Out-Null
+        $ADGroupObject = Get-ADGroup -Identity $titleName -ErrorAction Stop
         $ADGroupName = (Get-ADGroup -Identity $titleName).Name
         $groupExists = $true
     }
     catch {
         $groupExists = $false
     }
-
+    
     if ($groupExists) {
         Write-IndentHost "Found a group in Active Directory that has the name`n`tof the deparment you wish to create Shared Mailbox for."
         Write-IndentHost "Do you wish to add the users of the group '$ADGroupName' to the`n`taccess group '$SMGroupName' for '$titleName $fullName' account?"
-        # if yes - add members
-        # if no - move to the add member menu
+
+        #arrow menu here
+        $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title "Confirm"
+
+        switch ($OptionIndex) {
+            0 {
+                # YES OPTION
+                Add-ADGroupMember -Identity $SMGroupName -Members $ADGroupObject
+                Write-IndentHost "Group '$ADGroupName' add to the '$SMGroupName'!" -BackgroundColor Green -ForegroundColor White
+            }
+            1 {
+                # NO OPTION
+                Write-IndentHost "Moving to the main menu"
+            }
+        }
     }
     
     $menu = @(
@@ -188,11 +217,7 @@ while ($condition) {
         "Exit"
     )
 
+    $condition = $false
+
     # show menu where user can choose if he wants to add members to a group or exit the program
-
-
-    # Add-ADGroupMember -Identity $GroupName -Members
-    # napisać pętle która dodaje członkó danej grupy. np 'Shadows'
-    # w zależności czy wpisany deparment to grupa czy nie
-
 }

@@ -1,12 +1,14 @@
 TO COMMIT:
-
+    # COMMIT WELCOME MESSAGE !!!
+                # COMMIT changing try/catch to if/else and using the -Filter parameter to check the UPN
+                # COMMIT makin use of show-arrowmenu
+# COMMIT: developed a found group with the name of the deparment feature and yes no choice
 TO DO:
-    1. write error exceptions in the second loop !
-    1. save current files, restore files to the previous git version and DON'T MAKE MESS AGAIN!
-    do ATOMIC COMMITS and small progress !
+
     1. rewrite program, make welcome message and interactive menu right from the beginning if it is possible
     2. write a program that will work when everything is fine and after you finish, start look for problems
     that need to be handled, like when input is incorret!
+
     2. after you write create new user section, add prompt for what department user want to create
     SM and check if it is a group, for example:
     "Provie department you create SM for >> Shadows
