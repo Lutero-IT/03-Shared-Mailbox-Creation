@@ -1,10 +1,12 @@
 TO COMMIT:
-    1. deleted hardcoded paths to OU and change te to a script parameter variable
-    2. added short remove script for test purposes to delete all the AD object in targe OU
-    3. imported show-arrowmenu to the script because i'll use it for menu
 
 TO DO:
-    1. change harcoded value in the remove script
+    1. write error exceptions in the second loop !
+    1. save current files, restore files to the previous git version and DON'T MAKE MESS AGAIN!
+    do ATOMIC COMMITS and small progress !
+    1. rewrite program, make welcome message and interactive menu right from the beginning if it is possible
+    2. write a program that will work when everything is fine and after you finish, start look for problems
+    that need to be handled, like when input is incorret!
     2. after you write create new user section, add prompt for what department user want to create
     SM and check if it is a group, for example:
     "Provie department you create SM for >> Shadows
