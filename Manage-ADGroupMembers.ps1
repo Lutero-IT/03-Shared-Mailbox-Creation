@@ -90,14 +90,23 @@ function Manage-ADGroupMembers {
                                 Write-IndentHost "Processing to the next object on the list..."
                                 $Indent
                             } else {
+                                # HERE THE PROBLEM WITH NON-EXISTEN OBJECTS !!!
+                                # the problem is that -Filter parameter of the 'Get-ADObject' cmdlet doesnt return error
 
-                                try {
-                                    Get-ADObject -Filter "Name -eq '$object'" -ErrorAction Stop | Out-Null
-                                    Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
-
+                                $SearchObject = Get-ADObject -Filter "Name -eq '$object'"
+                                if ($SearchObject -eq $null) {
+                                    $Indent
+                                    Write-IndentHost "'$object' not found in Active Directory database!"  -BackgroundColor Red -ForegroundColor White
+                                    Write-IndentHost "Processing to the next object on the list..."
+                                    $Indent
+                                    
+                                    Start-Sleep -Seconds 1
+                                } else {
                                     switch ($ObjectType) {
                                         "user" {
                                             $ObjectMessage = {
+                                            Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
+
                                             Write-Indent "The passed object type is of a '" -NoNewLine
                                             Write-Host "USER" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
                                             Write-Host "' type"
@@ -108,6 +117,8 @@ function Manage-ADGroupMembers {
                                         }
                                         "group" {
                                             $ObjectMessage = {
+                                            Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
+
                                             Write-Indent "The passed object type is of a '" -NoNewLine
                                             Write-Host "GROUP" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
                                             Write-Host "' type"
@@ -143,17 +154,10 @@ function Manage-ADGroupMembers {
                                             Write-IndentHost "Processing to the next object on the list..."
                                             continue :ObjectLoop # start loop from the beginning on the next AD object from the list
                                         }
-                                    }
-
-
-                                } catch {
-                                    $Indent
-                                    Write-IndentHost "'$object' not found in Active Directory database!"  -BackgroundColor Red -ForegroundColor White
-                                    Write-IndentHost "Processing to the next object on the list..."
-                                    $Indent
-                                }
-                            }  
-                        }
+                                    } # closes $OptionIndex 'switch'
+                                } # closes 'if/else' statement for Get-ADObject cmdlet
+                            } # closes 'if/else' statement for $object in $membersList
+                        } # closes :ObjectLoop foreach
 
                         Write-IndentHost "No more objects left to add"
                         Read-IndentHost "Press 'Enter' to go back to the Remove Menu"
