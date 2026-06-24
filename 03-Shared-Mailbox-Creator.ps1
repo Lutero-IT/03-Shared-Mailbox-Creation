@@ -70,10 +70,10 @@ while ($condition) {
     Write-IndentHost "Name has to be at least 5 or at most 20 characters long"
     Write-IndentHost "and can contain only letters (upper or lowercase) or numbers"
     Write-IndentHost "and a three special signs: underscore (_), dash (-) and dot (.)"
-    Write-IndentHost ""
 
     $userExist = $true
     do {
+        Write-IndentHost ""
         Write-IndentHost "For what department do you want to create a shared mailbox?"
         $name = (Read-IndentHost "Type name").ToLower()
 
@@ -104,6 +104,7 @@ while ($condition) {
         }
         catch {
             Write-IndentHost "No input passed" -BackgroundColor Red -ForegroundColor White
+
         }
 
     } until (-not $userExist)

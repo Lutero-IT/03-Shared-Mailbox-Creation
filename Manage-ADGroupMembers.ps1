@@ -121,12 +121,119 @@ function Manage-ADGroupMembers {
                                 }
                             }  
                         }
+
                         Write-IndentHost "No more users left to add"
+
+                        $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
                         $addMember = $false
 
                     } # closes the 'else' statement if input is provided for add member option
                 } # closes the add member validation 'while' loop
             } # closes the 'switch' (0) option - Add Member
+
+
+            1 { # OPTION 2 - REMOVE MEMBER (or Members!) #
+                Write-Host ""
+                Write-IndentHost "Chose Option 2 - Remove Members" -BackgroundColor Yellow -ForegroundColor Black
+                Write-Host ""
+
+                $removeLoop  = $true
+                while ($removeLoop) {
+                        
+                    # REMOVE MENU #
+                    $optionsList = @(
+                        "1. List Group Members ",
+                        "2. Type Username ",
+                        "3. Back to Main Menu "
+                    )
+
+                    $optionIndex = Show-ArrowMenu -Title "Remove Menu" -Group $groupName -Menu $optionsList
+
+                    switch ($optionIndex) {
+                        0 {
+                            
+                            Write-IndentHost "| '$groupName' group Members: |"
+                            Write-Host ""
+                            if ($membersList -eq $null) {
+                                Write-IndentHost "This group has no members!" -BackgroundColor Yellow -ForegroundColor Black
+                            } else {
+                                $membersList | ForEach-Object -Process {
+                                        Write-IndentHost "* $_"
+                                    }
+                            }
+                            Write-IndentHost ""
+                            Read-IndentHost "Press 'Enter' to go back to the Remove Menu"
+                        }
+                        
+                        1 {
+                            # USER VALIDATION LOOP #
+                            $removeLoop2 = $true
+                            while ($removeLoop2) {
+
+                                Write-IndentHost "Provide a member or members of the '$groupName' group you wish to remove"
+                                Write-IndentHost "(if you want to remove multiple members, separate them with a comma)"
+                                Write-IndentHost "or type [Cancel/C] if you want to cancel operation (case insensitive)"
+                                $username = Read-IndentHost "Type username "
+
+                                $usersList = $username.Split(",").Trim()
+
+                                if ($usersList.Length -eq 0) {
+                                    Write-IndentHost "No input passed" -BackgroundColor Red -ForegroundColor White
+                                } elseif ( ($username -eq "cancel") -or ($username -eq "c") ) {
+                                    Write-IndentHost "Removing user canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                    $removeLoop2 = $false
+                                } else {
+                                    foreach ($user in $usersList) {
+                                        if ($user -in $membersList) {                                
+                                            $Indent
+                                            Write-IndentHost "'$user' is a member of '$groupName' group!"  -BackgroundColor Green -ForegroundColor White
+                                            $Indent
+                                            Write-IndentHost "Are you sure you want to remove '$user' from the '$groupName' group?"
+                                            $decision = Read-IndentHost "Type [Yes/y] or [No/n]"
+
+                                            if ($decision -in $yesList) {
+                                                Write-IndentHost "Removing '$user' from the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
+                                                try {
+                                                Remove-ADGroupMember -Identity $groupName -Members $user -Confirm:$false -ErrorAction Stop
+                                                $Indent
+                                                Write-IndentHost "Removing member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
+                                                } catch {
+                                                Write-IndentHost "CRITICAL: Failed to remove '$user'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
+                                                }
+                                            } elseif ($decision -in $noList) {
+                                                Write-IndentHost "Removing user canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                            } else {
+                                                Write-IndentHost "Passed Invalid value!" -BackgroundColor Red -ForegroundColor White
+                                                Write-IndentHost "User removal aborted"
+                                            }
+                                        } else {
+                                            $Indent
+                                            Write-IndentHost "'$user' is not a member of '$groupName' group!" -BackgroundColor Red -ForegroundColor White
+                                            Write-IndentHost "Processing to the next user on the list..."
+                                            $Indent
+                                        }
+
+                                    $Indent
+                                    Write-IndentHost "No more users left to remove"
+
+                                    $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
+                                    $removeLoop2 = $false # breaks user validation loop
+
+                                    } # closes the 'foreach' loop
+                                } # closes the 'else' statement
+                            } # closes the remove member validation 'while' loop
+
+                        } # closes the (1) option of Remove Member option - Type username
+
+                        2 {
+                            Write-IndentHost "Getting back to Main Menu" -BackgroundColor Yellow -ForegroundColor Black
+                            $removeLoop2 = $false
+                            $removeLoop = $false
+                        } # closes the 'switch' (2) option - Back to Main Menu
+
+                    } # closes the remove menu 'switch' statement
+                } # closes the 'removeLoop' while loop
+            } # closes the 'switch' (1) option - Remove Member 
         } # closes the main menu 'switch' statement
     } # closes the main 'while' loop
 } # closes the function 'Manage-ADGroupMembers'
