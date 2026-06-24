@@ -222,3 +222,5 @@ while ($condition) {
 
 $condition = $false
 }
+
+Write-IndentHost "Program executed!" -BackgroundColor Blue -ForegroundColor White

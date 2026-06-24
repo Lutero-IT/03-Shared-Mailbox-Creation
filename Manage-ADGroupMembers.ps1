@@ -42,17 +42,17 @@ function Manage-ADGroupMembers {
         # Here make the logic for add and remove members from the access group
         # how to change to other access group?
 
-
-    while ($true) {
+    $mainLoop = $true
+    while ($mainLoop) {
         # add -group parameter back to the show-arrowmenu or create another function
         
         $title = "Access Group Manager"
         $menu = @(
             "Add Members",
             "Remove Members",
+            "Show Group Members",
             "Add Group",
-            "Remove Group"
-            "Change Access Group"
+            "Remove Group",
             "Exit"
         )
 
@@ -60,8 +60,7 @@ function Manage-ADGroupMembers {
         $optionIndex = Show-ArrowMenu -Menu $menu -Title $title -Group $groupName -Message $WelcomeMessage
 
         switch ($optionIndex) {
-            # OPTION 1 - ADD MEMBER #
-            0 {
+            0 { # OPTION 1 - ADD MEMBERS #
                 Write-Host ""
                 Write-IndentHost "Chose Option 1 - Add Members" -BackgroundColor Yellow -ForegroundColor Black
                 Write-Host ""
@@ -132,7 +131,7 @@ function Manage-ADGroupMembers {
             } # closes the 'switch' (0) option - Add Member
 
 
-            1 { # OPTION 2 - REMOVE MEMBER (or Members!) #
+            1 { # OPTION 2 - REMOVE MEMBERS #
                 Write-Host ""
                 Write-IndentHost "Chose Option 2 - Remove Members" -BackgroundColor Yellow -ForegroundColor Black
                 Write-Host ""
@@ -230,10 +229,39 @@ function Manage-ADGroupMembers {
                             $removeLoop2 = $false
                             $removeLoop = $false
                         } # closes the 'switch' (2) option - Back to Main Menu
-
                     } # closes the remove menu 'switch' statement
                 } # closes the 'removeLoop' while loop
-            } # closes the 'switch' (1) option - Remove Member 
+            } # closes the 'switch' (1) option - Remove Member
+
+            2 { # OPTION 3 - SHOW GROUP MEMBERS #           
+                Write-IndentHost "| '$groupName' group Members: |"
+                Write-Host ""
+                if ($membersList -eq $null) {
+                    Write-IndentHost "This group has no members!" -BackgroundColor Yellow -ForegroundColor Black
+                } else {
+                    $membersList | ForEach-Object -Process {
+                            Write-IndentHost "* $_"
+                        }
+                }
+                Write-IndentHost ""
+                Read-IndentHost "Press 'Enter' to go back to the Remove Menu"
+                
+            } # closes the 'switch' (2) option - Show Group Members
+
+            3 { # OPTION 4 - ADD GROUP #
+
+            } # closes the 'switch' (3) option - Add Group
+
+            4 { # OPTION 5 - REMOVE GROUP #
+
+            } # closes the 'switch' (4) option - Remove Group
+
+            5 { # OPTION 6 - EXIT #
+                Write-IndentHost "Chose to exit the program" -BackgroundColor Yellow -ForegroundColor Black
+                $mainLoop = $false
+                $condition = $false
+            } # closes the 'switch' (6) option - Exit
+
         } # closes the main menu 'switch' statement
     } # closes the main 'while' loop
 } # closes the function 'Manage-ADGroupMembers'
