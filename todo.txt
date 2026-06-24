@@ -1,7 +1,8 @@
 TO COMMIT:
 
 TO DO:
-    1. add rest of the features to the access group menu and finish the Project
+    1. move the notifications about successfull adding and failure, and finding an object inside the switch statements!
+
     2. separate those helper functions tha are not using AD cmdlets to distinct files
     to keep main script maximum clear and simple
 

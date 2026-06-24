@@ -48,11 +48,9 @@ function Manage-ADGroupMembers {
         
         $title = "Access Group Manager"
         $menu = @(
-            "Add Members",
-            "Remove Members",
+            "Add Members or Groups",
+            "Remove Members or Groups",
             "Show Group Members",
-            "Add Group",
-            "Remove Group",
             "Exit"
         )
 
@@ -65,63 +63,100 @@ function Manage-ADGroupMembers {
                 Write-IndentHost "Chose Option 1 - Add Members" -BackgroundColor Yellow -ForegroundColor Black
                 Write-Host ""
 
-                # USER VALIDATION LOOP #
+                # object VALIDATION LOOP #
                 $addMember = $true
                 while ($addMember) {
 
-                    Write-IndentHost "Provide a member or members you wish to add to the '$groupName' group"
-                    Write-IndentHost "(if you want to add multiple members, separate them with a comma)"
+                    Write-IndentHost "Provide members or groups you wish to add to the '$groupName' group"
+                    Write-IndentHost "(if you want to add multiple members/groups separate them with a comma)"
                     Write-IndentHost "or type [Cancel/C] if you want to cancel operation (case insensitive)"
-                    $username = Read-IndentHost "Type username "
+                    $ObjectName = Read-IndentHost "Type object name "
 
-                    $usersList = $username.Split(",").Trim()
+                    $ObjectsList = $ObjectName.Split(",").Trim()
 
-                    if ($usersList.Length -eq 0) {
+                    if ($ObjectsList.Length -eq 0) {
                         Write-IndentHost "No input passed" -BackgroundColor Red -ForegroundColor White
-                    }  elseif ( ($username -eq "cancel") -or ($username -eq "c") ) {
-                        Write-IndentHost "Removing user canceled" -BackgroundColor Yellow -ForegroundColor Black
-                        $addMember = $false # finishes user validation loop after the loop reaches end #
+                    }  elseif ( ($ObjectName -eq "cancel") -or ($ObjectName -eq "c") ) {
+                        Write-IndentHost "Adding object canceled" -BackgroundColor Yellow -ForegroundColor Black
+                        $addMember = $false # finishes object validation loop after the loop reaches end #
                     } else {
-                        foreach ($user in $usersList) {
-                            if ($user -in $membersList) {                                
+                        :ObjectLoop foreach ($object in $ObjectsList) {
+
+                            $ObjectType = (Get-ADObject -Filter "Name -eq '$object'").ObjectClass
+
+                            if ($object -in $membersList) {                                
                                 $Indent
-                                Write-IndentHost "'$user' is already a member of '$groupName' group!"  -BackgroundColor Yellow -ForegroundColor Black
-                                Write-IndentHost "Processing to the next user on the list..."
+                                Write-IndentHost "'$object' is already a member of '$groupName' group!"  -BackgroundColor Yellow -ForegroundColor Black
+                                Write-IndentHost "Processing to the next object on the list..."
                                 $Indent
                             } else {
-                                try {
-                                    Get-ADUser -Identity $user -ErrorAction Stop | Out-Null
-                                    Write-IndentHost "'$user' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
-                                    Write-IndentHost "Are you sure you want to add '$user' to the '$groupName' group?"
-                                    $decision = Read-IndentHost "Type [Yes/y] or [No/n]"
 
-                                    if ($decision -in $yesList) {
-                                        Write-IndentHost "Adding '$user' to the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
-                                        try {
-                                            Add-ADGroupMember -Identity $groupName -Members $user -ErrorAction Stop
-                                            
-                                            $Indent
-                                            Write-IndentHost "Adding member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
-                                        } catch {
-                                            Write-IndentHost "CRITICAL: Failed to add '$user'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
+                                try {
+                                    Get-ADObject -Filter "Name -eq '$object'" -ErrorAction Stop | Out-Null
+                                    Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
+
+                                    switch ($ObjectType) {
+                                        "user" {
+                                            $ObjectMessage = {
+                                            Write-Indent "The passed object type is of a '" -NoNewLine
+                                            Write-Host "USER" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+                                            Write-Host "' type"
+
+                                            Write-IndentHost "Are you sure you want to add '$object' to the '$groupName' group?"
+                                            }
+                                            $ObjectTitle = "Confirm"
                                         }
-                                        $Indent
-                                    } elseif ($decision -in $noList) {
-                                        Write-IndentHost "Adding user canceled" -BackgroundColor Yellow -ForegroundColor Black
-                                    } else {
-                                        Write-IndentHost "Passed Invalid value!" -BackgroundColor Red -ForegroundColor White
-                                        Write-IndentHost "User joining aborted"
+                                        "group" {
+                                            $ObjectMessage = {
+                                            Write-Indent "The passed object type is of a '" -NoNewLine
+                                            Write-Host "GROUP" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+                                            Write-Host "' type"
+                                            
+                                            Write-IndentHost "Are you sure you want to add the entire group to the '$SMGroupName' access group?"
+                                            Write-IndentHost "This will result in adding ALL users inside that group, which may present"
+                                            Write-IndentHost "a security risk if you are not certain who the members of the group are."
+                                            }
+                                            $ObjectTitle = "Warning"
+                                        }
                                     }
+
+                                    Start-Sleep -Seconds 3
+                                    $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title $ObjectTitle -Message $ObjectMessage
+                                    Write-IndentHost ""
+
+                                    switch ($OptionIndex) {
+                                        0 {
+                                            Write-IndentHost "Adding '$object' to the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
+                                            try {
+                                                Add-ADGroupMember -Identity $groupName -Members $object -ErrorAction Stop
+                                                
+                                                $Indent
+                                                Write-IndentHost "Adding member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
+                                            } catch {
+                                                Write-IndentHost "CRITICAL: Failed to add '$object'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
+                                            }
+                                            $Indent
+                                        }
+                                        1 {
+                                            # NO OPTION
+                                            Write-IndentHost "Adding object canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                            Write-IndentHost "Processing to the next object on the list..."
+                                            continue :ObjectLoop # start loop from the beginning on the next AD object from the list
+                                        }
+                                    }
+
+
                                 } catch {
                                     $Indent
-                                    Write-IndentHost "'$user' not found in Active Directory database!"  -BackgroundColor Red -ForegroundColor White
-                                    Write-IndentHost "Processing to the next user on the list..."
+                                    Write-IndentHost "'$object' not found in Active Directory database!"  -BackgroundColor Red -ForegroundColor White
+                                    Write-IndentHost "Processing to the next object on the list..."
                                     $Indent
                                 }
                             }  
                         }
 
-                        Write-IndentHost "No more users left to add"
+                        Write-IndentHost "No more objects left to add"
+                        Read-IndentHost "Press 'Enter' to go back to the Remove Menu"
 
                         $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
                         $addMember = $false
@@ -142,7 +177,7 @@ function Manage-ADGroupMembers {
                     # REMOVE MENU #
                     $optionsList = @(
                         "1. List Group Members ",
-                        "2. Type Username ",
+                        "2. Type ObjectName ",
                         "3. Back to Main Menu "
                     )
 
@@ -165,64 +200,64 @@ function Manage-ADGroupMembers {
                         }
                         
                         1 {
-                            # USER VALIDATION LOOP #
+                            # object VALIDATION LOOP #
                             $removeLoop2 = $true
                             while ($removeLoop2) {
 
                                 Write-IndentHost "Provide a member or members of the '$groupName' group you wish to remove"
                                 Write-IndentHost "(if you want to remove multiple members, separate them with a comma)"
                                 Write-IndentHost "or type [Cancel/C] if you want to cancel operation (case insensitive)"
-                                $username = Read-IndentHost "Type username "
+                                $ObjectName = Read-IndentHost "Type ObjectName "
 
-                                $usersList = $username.Split(",").Trim()
+                                $ObjectsList = $ObjectName.Split(",").Trim()
 
-                                if ($usersList.Length -eq 0) {
+                                if ($ObjectsList.Length -eq 0) {
                                     Write-IndentHost "No input passed" -BackgroundColor Red -ForegroundColor White
-                                } elseif ( ($username -eq "cancel") -or ($username -eq "c") ) {
-                                    Write-IndentHost "Removing user canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                } elseif ( ($ObjectName -eq "cancel") -or ($ObjectName -eq "c") ) {
+                                    Write-IndentHost "Removing object canceled" -BackgroundColor Yellow -ForegroundColor Black
                                     $removeLoop2 = $false
                                 } else {
-                                    foreach ($user in $usersList) {
-                                        if ($user -in $membersList) {                                
+                                    foreach ($object in $ObjectsList) {
+                                        if ($object -in $membersList) {                                
                                             $Indent
-                                            Write-IndentHost "'$user' is a member of '$groupName' group!"  -BackgroundColor Green -ForegroundColor White
+                                            Write-IndentHost "'$object' is a member of '$groupName' group!"  -BackgroundColor Green -ForegroundColor White
                                             $Indent
-                                            Write-IndentHost "Are you sure you want to remove '$user' from the '$groupName' group?"
+                                            Write-IndentHost "Are you sure you want to remove '$object' from the '$groupName' group?"
                                             $decision = Read-IndentHost "Type [Yes/y] or [No/n]"
 
                                             if ($decision -in $yesList) {
-                                                Write-IndentHost "Removing '$user' from the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
+                                                Write-IndentHost "Removing '$object' from the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
                                                 try {
-                                                Remove-ADGroupMember -Identity $groupName -Members $user -Confirm:$false -ErrorAction Stop
+                                                Remove-ADGroupMember -Identity $groupName -Members $object -Confirm:$false -ErrorAction Stop
                                                 $Indent
                                                 Write-IndentHost "Removing member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
                                                 } catch {
-                                                Write-IndentHost "CRITICAL: Failed to remove '$user'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
+                                                Write-IndentHost "CRITICAL: Failed to remove '$object'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
                                                 }
                                             } elseif ($decision -in $noList) {
-                                                Write-IndentHost "Removing user canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                                Write-IndentHost "Removing object canceled" -BackgroundColor Yellow -ForegroundColor Black
                                             } else {
                                                 Write-IndentHost "Passed Invalid value!" -BackgroundColor Red -ForegroundColor White
-                                                Write-IndentHost "User removal aborted"
+                                                Write-IndentHost "object removal aborted"
                                             }
                                         } else {
                                             $Indent
-                                            Write-IndentHost "'$user' is not a member of '$groupName' group!" -BackgroundColor Red -ForegroundColor White
-                                            Write-IndentHost "Processing to the next user on the list..."
+                                            Write-IndentHost "'$object' is not a member of '$groupName' group!" -BackgroundColor Red -ForegroundColor White
+                                            Write-IndentHost "Processing to the next object on the list..."
                                             $Indent
                                         }
 
                                     $Indent
-                                    Write-IndentHost "No more users left to remove"
+                                    Write-IndentHost "No more objects left to remove"
 
                                     $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
-                                    $removeLoop2 = $false # breaks user validation loop
+                                    $removeLoop2 = $false # breaks object validation loop
 
                                     } # closes the 'foreach' loop
                                 } # closes the 'else' statement
                             } # closes the remove member validation 'while' loop
 
-                        } # closes the (1) option of Remove Member option - Type username
+                        } # closes the (1) option of Remove Member option - Type ObjectName
 
                         2 {
                             Write-IndentHost "Getting back to Main Menu" -BackgroundColor Yellow -ForegroundColor Black
@@ -248,15 +283,7 @@ function Manage-ADGroupMembers {
                 
             } # closes the 'switch' (2) option - Show Group Members
 
-            3 { # OPTION 4 - ADD GROUP #
-
-            } # closes the 'switch' (3) option - Add Group
-
-            4 { # OPTION 5 - REMOVE GROUP #
-
-            } # closes the 'switch' (4) option - Remove Group
-
-            5 { # OPTION 6 - EXIT #
+            3 { # OPTION 6 - EXIT #
                 Write-IndentHost "Chose to exit the program" -BackgroundColor Yellow -ForegroundColor Black
                 $mainLoop = $false
                 $condition = $false
