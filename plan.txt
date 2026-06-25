@@ -1,9 +1,0 @@
-Okay so I have written the '03-Shared-Mailbox-Creator.ps1' program that creates a Shared Mailbox account
-and access group to that account and adds group that matches the department name.
-
-Now I want to create a menu, where user can add,remove members or groups to the access group.
-I want to reuse the written 'Manage-ADGroupMembers.ps1' program because it has most of the funcionalisties
-I need for the 03 Project, but I have to change some parts of the 02 Project.
-
-Later I will import the Group Manager to the Mailbox Creator.
-      

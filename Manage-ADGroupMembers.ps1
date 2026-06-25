@@ -90,9 +90,6 @@ function Manage-ADGroupMembers {
                                 Write-IndentHost "Processing to the next object on the list..."
                                 $Indent
                             } else {
-                                # HERE THE PROBLEM WITH NON-EXISTEN OBJECTS !!!
-                                # the problem is that -Filter parameter of the 'Get-ADObject' cmdlet doesnt return error
-
                                 $SearchObject = Get-ADObject -Filter "Name -eq '$object'"
                                 if ($SearchObject -eq $null) {
                                     $Indent
@@ -204,62 +201,105 @@ function Manage-ADGroupMembers {
                         }
                         
                         1 {
-                            # object VALIDATION LOOP #
-                            $removeLoop2 = $true
-                            while ($removeLoop2) {
+                            # OBJECT VALIDATION LOOP
+                            $RemoveMember = $true
+                            while ($RemoveMember) {
 
-                                Write-IndentHost "Provide a member or members of the '$groupName' group you wish to remove"
-                                Write-IndentHost "(if you want to remove multiple members, separate them with a comma)"
+                                Write-IndentHost "Provide members or groups you wish to remove from the '$groupName' group"
+                                Write-IndentHost "(if you want to remove multiple members/groups separate them with a comma)"
                                 Write-IndentHost "or type [Cancel/C] if you want to cancel operation (case insensitive)"
-                                $ObjectName = Read-IndentHost "Type ObjectName "
+                                $ObjectName = Read-IndentHost "Type object name "
 
                                 $ObjectsList = $ObjectName.Split(",").Trim()
 
                                 if ($ObjectsList.Length -eq 0) {
                                     Write-IndentHost "No input passed" -BackgroundColor Red -ForegroundColor White
-                                } elseif ( ($ObjectName -eq "cancel") -or ($ObjectName -eq "c") ) {
+                                }  elseif ( ($ObjectName -eq "cancel") -or ($ObjectName -eq "c") ) {
                                     Write-IndentHost "Removing object canceled" -BackgroundColor Yellow -ForegroundColor Black
-                                    $removeLoop2 = $false
+                                    $RemoveMember = $false # finishes object validation loop after the loop reaches end #
                                 } else {
-                                    foreach ($object in $ObjectsList) {
-                                        if ($object -in $membersList) {                                
-                                            $Indent
-                                            Write-IndentHost "'$object' is a member of '$groupName' group!"  -BackgroundColor Green -ForegroundColor White
-                                            $Indent
-                                            Write-IndentHost "Are you sure you want to remove '$object' from the '$groupName' group?"
-                                            $decision = Read-IndentHost "Type [Yes/y] or [No/n]"
+                                    :ObjectLoop foreach ($object in $ObjectsList) {
 
-                                            if ($decision -in $yesList) {
-                                                Write-IndentHost "Removing '$object' from the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
-                                                try {
-                                                Remove-ADGroupMember -Identity $groupName -Members $object -Confirm:$false -ErrorAction Stop
+                                        $ObjectType = (Get-ADObject -Filter "Name -eq '$object'").ObjectClass
+
+                                        if ($object -in $membersList) {                                
+                                            $SearchObject = Get-ADObject -Filter "Name -eq '$object'"
+                                            if ($SearchObject -eq $null) {
                                                 $Indent
-                                                Write-IndentHost "Removing member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
-                                                } catch {
-                                                Write-IndentHost "CRITICAL: Failed to remove '$object'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
-                                                }
-                                            } elseif ($decision -in $noList) {
-                                                Write-IndentHost "Removing object canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                                Write-IndentHost "'$object' not found in Active Directory database!"  -BackgroundColor Red -ForegroundColor White
+                                                Write-IndentHost "Processing to the next object on the list..."
+                                                $Indent
+                                                
+                                                Start-Sleep -Seconds 1
                                             } else {
-                                                Write-IndentHost "Passed Invalid value!" -BackgroundColor Red -ForegroundColor White
-                                                Write-IndentHost "object removal aborted"
-                                            }
+                                                switch ($ObjectType) {
+                                                    "user" {
+                                                        $ObjectMessage = {
+                                                        Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
+
+                                                        Write-Indent "The passed object type is of a '" -NoNewLine
+                                                        Write-Host "USER" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+                                                        Write-Host "' type"
+
+                                                        Write-IndentHost "Are you sure you want to remove '$object' from the '$groupName' group?"
+                                                        }
+                                                        $ObjectTitle = "Confirm"
+                                                    }
+                                                    "group" {
+                                                        $ObjectMessage = {
+                                                        Write-IndentHost "'$object' found in Active Directory database!"  -BackgroundColor Green -ForegroundColor White
+
+                                                        Write-Indent "The passed object type is of a '" -NoNewLine
+                                                        Write-Host "GROUP" -ForegroundColor Black -BackgroundColor Yellow  -NoNewline
+                                                        Write-Host "' type"
+                                                        
+                                                        Write-IndentHost "Are you sure you want to remove the entire group from the '$SMGroupName' access group?"
+                                                        }
+                                                        $ObjectTitle = "Warning"
+                                                    }
+                                                }
+
+                                                Start-Sleep -Seconds 3
+                                                $OptionIndex = Show-ArrowMenu -Menu $YesNo -Title $ObjectTitle -Message $ObjectMessage
+                                                Write-IndentHost ""
+
+                                                switch ($OptionIndex) {
+                                                    0 {
+                                                        Write-IndentHost "Removing '$object' from the '$groupName' group..."  -BackgroundColor Yellow -ForegroundColor Black
+                                                        try {
+                                                            Remove-ADGroupMember -Identity $groupName -Members $object -ErrorAction Stop -Confirm:$false
+                                                            
+                                                            $Indent
+                                                            Write-IndentHost "Removing member completed sucessfully!" -BackgroundColor Green -ForegroundColor White
+                                                        } catch {
+                                                            Write-IndentHost "CRITICAL: Failed to add '$object'. Verify your AD permissions." -BackgroundColor Red -ForegroundColor White
+                                                        }
+                                                        $Indent
+                                                    }
+                                                    1 {
+                                                        # NO OPTION
+                                                        Write-IndentHost "Removing object canceled" -BackgroundColor Yellow -ForegroundColor Black
+                                                        Write-IndentHost "Processing to the next object on the list..."
+                                                        continue :ObjectLoop # start loop from the beginning on the next AD object from the list
+                                                    }
+                                                } # closes $OptionIndex 'switch'
+                                            } # closes 'if/else' statement for Get-ADObject cmdlet
                                         } else {
                                             $Indent
-                                            Write-IndentHost "'$object' is not a member of '$groupName' group!" -BackgroundColor Red -ForegroundColor White
+                                            Write-IndentHost "'$object' is not a member of '$groupName' group!"  -BackgroundColor Yellow -ForegroundColor Black
                                             Write-IndentHost "Processing to the next object on the list..."
                                             $Indent
-                                        }
+                                        } # closes 'if/else' statement for $object in $membersList
+                                    } # closes :ObjectLoop foreach
 
-                                    $Indent
                                     Write-IndentHost "No more objects left to remove"
+                                    Read-IndentHost "Press 'Enter' to go back to the Remove Menu"
 
                                     $membersList = Get-ADGroupMember -Identity $groupName | Select-Object Name -ExpandProperty Name
-                                    $removeLoop2 = $false # breaks object validation loop
+                                    $RemoveMember = $false
 
-                                    } # closes the 'foreach' loop
-                                } # closes the 'else' statement
-                            } # closes the remove member validation 'while' loop
+                                } # closes the 'else' statement if input is provided for add member option
+                            } # closes the add member validation 'while' loop
 
                         } # closes the (1) option of Remove Member option - Type ObjectName
 
