@@ -7,7 +7,7 @@ param(
     [string]$OUPath = "OU=Shared Mailboxes,OU=Resources,OU=Camp,DC=oldcamp,DC=gothic,DC=inc"
 )
 
-# Import functions
+# IMPORTED FUNCTIONS #
 . ".\Show-ArrowMenu.ps1"
 . ".\Manage-ADGroupMembers.ps1"
 
